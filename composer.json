@@ -1,0 +1,27 @@
+{
+    "name": "bagisto/bagisto-usps-shipping",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Naresh Verma",
+            "email": "naresh.verma327@webkul.com"
+        }
+    ],
+    "require": {
+        "konekt/concord": "^1.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Webkul\\UspsShipping\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webkul\\UspsShipping\\Providers\\UspsShippingServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}
