@@ -1,48 +1,114 @@
-<form data-vv-scope="shipping-form">
-    <div class="form-container">
-        <div class="form-header mb-30">
-            <span class="checkout-step-heading">{{ __('shop::app.checkout.onepage.shipping-method') }}</span>
-        </div>
+{!! view_render_event('bagisto.shop.checkout.shipping.method.before') !!}
 
-        <div class="shipping-methods">
+<v-shipping-method ref="vShippingMethod">
 
-            <div class="control-group" :class="[errors.has('shipping-form.shipping_method') ? 'has-error' : '']">
+    {{-- Shipping Method Shimmer Effect --}}
+    <x-shop::shimmer.checkout.onepage.shipping-method />
+</v-shipping-method>
 
-                @foreach ($shippingRateGroups as $rateGroup)
-                    {!! view_render_event('bagisto.shop.checkout.shipping-method.before', ['rateGroup' => $rateGroup]) !!}
+{!! view_render_event('bagisto.shop.checkout.shipping.method.after') !!}
 
-                    <span class="carrier-title" id="carrier-title" style="font-size:18px; font-weight: bold;">
-                        {{ $rateGroup['carrier_title'] }}
-                    </span>
+@pushOnce('scripts')
+<script type="text/x-template" id="v-shipping-method-template">
+    <div class="mt-[30px]">
+            <template v-if="! isShowShippingMethod && isShippingMethodLoading">
+                <!-- Shipping Method Shimmer Effect -->
+                <x-shop::shimmer.checkout.onepage.shipping-method/>
+            </template>
 
-                    @foreach ($rateGroup['rates'] as $rate)
-                        <div class="checkout-method-group mb-20">
-                            <div class="line-one">
-                                <label class="radio-container">
-                                    <input v-validate="'required'" type="radio" id="{{ $rate->method }}" name="shipping_method" data-vv-as="&quot;{{ __('shop::app.checkout.onepage.shipping-method') }}&quot;" value="{{ $rate->method }}" v-model="selected_shipping_method" @change="methodSelected()">
-                                    <span class="checkmark"></span>
-                                </label>
-                                {{-- <label class="radio-view" for="{{ $rate->method }}"></label> --}}
-                                <b class="ship-rate method-label">{{ core()->currency($rate->base_price) }}</b>
-                            </div>
+            <template v-if="isShowShippingMethod">
+                <x-shop::accordion>
+                    <x-slot:header>
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-[26px] font-medium max-sm:text-[20px]">
+                                @lang('shop::app.checkout.onepage.shipping.shipping-method')
+                            </h2>
+                        </div>
+                    </x-slot:header>
 
-                            <div class="line-two mt-5">
-                                <div class="method-summary">
-                                    <b>{{ $rate->carrier_title }}</b> - {{ __($rate->method_description) }}
+                    <x-slot:content>
+                        <div class="flex flex-wrap gap-[30px] mt-[30px]">
+
+                            @if (core()->getConfigData('sales.carriers.usps.active'))    
+                                <div v-if="usps in shippingMethods">
                                 </div>
+                                <div v-else class="relative max-w-[218px] max-sm:max-w-full max-sm:flex-auto select-none">
+                                    <div style="border:1px solid red;width:100%;padding:15px">
+                                        <p class="text-[16px] mt-[5px] font-semibold max-sm:text-[20px]">{{core()->getConfigData('sales.carriers.usps.error_message') }}</p>
+                                        <p class="text-[12px] mt-[10px] font-medium">{{core()->getConfigData('sales.carriers.usps.title')}}</p>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <div class="relative max-w-[218px] max-sm:max-w-full max-sm:flex-auto select-none" v-for="shippingMethod in shippingMethods" >
+
+                                {!! view_render_event('bagisto.shop.checkout.shipping-method.before') !!}
+                                <div v-for="rate in shippingMethod.rates">
+                                    <input  type="radio" name="shipping_method" :id="rate.method" :value="rate.method" class="hidden peer" @change="store(rate.method)" >
+
+                                    <label class="icon-radio-unselect absolute ltr:right-[20px] rtl:left-[20px] top-[20px] text-[24px] text-navyBlue peer-checked:icon-radio-select cursor-pointer" :for="rate.method">
+                                    </label>
+
+                                    <label  class="block p-[20px] border border-[#E9E9E9] rounded-[12px] cursor-pointer" :for="rate.method" >
+                                        <span class="icon-flate-rate text-[60px] text-navyBlue"></span>
+
+                                        <p class="text-[25px] mt-[5px] font-semibold max-sm:text-[20px]">
+                                            @{{ rate.base_formatted_price }}
+                                        </p>
+                                        
+                                        <p class="text-[12px] mt-[10px] font-medium">
+                                            <span class="font-medium">@{{ rate.method_title }}</span> - @{{ rate.method_description }}
+                                        </p>
+                                    </label>
+                                </div>
+
+                                {!! view_render_event('bagisto.shop.checkout.shipping-method.after') !!}
+
                             </div>
                         </div>
-
-                    @endforeach
-
-                    {!! view_render_event('bagisto.shop.checkout.shipping-method.after', ['rateGroup' => $rateGroup]) !!}
-
-                @endforeach
-
-                <span class="control-error" v-if="errors.has('shipping-form.shipping_method')">
-                    @{{ errors.first('shipping-form.shipping_method') }}
-                </span>
-            </div>
+                    </x-slot:content>
+                </x-shop::accordion>
+            </template>
         </div>
-    </div>
-</form>
+    </script>
+
+<script type="module">
+    app.component('v-shipping-method', {
+        template: '#v-shipping-method-template',
+
+        data() {
+            return {
+                shippingMethods: [],
+
+                isShowShippingMethod: false,
+
+                isShippingMethodLoading: false,
+            }
+        },
+
+        methods: {
+            store(selectedShippingMethod) {
+                this.$parent.$refs.vCartSummary.canPlaceOrder = false;
+
+                this.$parent.$refs.vPaymentMethod.isShowPaymentMethod = false;
+
+                this.$parent.$refs.vPaymentMethod.isPaymentMethodLoading = true;
+
+                this.$axios.post("{{ route('shop.checkout.onepage.shipping_methods.store') }}", {
+                        shipping_method: selectedShippingMethod,
+                    })
+                    .then(response => {
+                        this.$parent.getOrderSummary();
+
+                        this.$parent.$refs.vPaymentMethod.payment_methods = response.data.payment_methods;
+
+                        this.$parent.$refs.vPaymentMethod.isShowPaymentMethod = true;
+
+                        this.$parent.$refs.vPaymentMethod.isPaymentMethodLoading = false;
+                    })
+                .catch(error => {});
+            },
+        },
+    });
+</script>
+@endPushOnce
