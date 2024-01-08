@@ -169,7 +169,7 @@ return [
             ],[
                 'name'          => 'allowed_countries',
                 'title'         => 'usps::app.admin.system.allowed-countries',
-                'type'          => 'country',
+                'type'          => 'multi-country',
                 'validation'    => 'required',
                 'channel_based' => false,
                 'locale_based'  => true,
