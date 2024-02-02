@@ -18,14 +18,19 @@ class UspsShippingServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'usps');
 
-         //checkout page
-         $this->publishes([
+        //checkout onepage page
+        $this->publishes([
             __DIR__ . '/../Resources/views/shop/default/checkout/onepage/shipping.blade.php' => resource_path('themes/default/views/checkout/onepage/shipping.blade.php')
         ]);
 
-        //checkout velocity page
+        //checkout cart page
         $this->publishes([
-            __DIR__ . '/../Resources/views/shop/velocity/checkout/onepage/shipping.blade.php' => resource_path('themes/velocity/views/checkout/onepage/shipping.blade.php')
+            __DIR__ . '/../Resources/views/shop/default/checkout/cart/index.blade.php' => resource_path('themes/default/views/checkout/cart/index.blade.php')
+        ]);
+
+        //field type page
+        $this->publishes([
+            __DIR__ . '/../Resources/views/configuration/field-type.blade.php' => __DIR__ . '/../../../Admin/src/Resources/views/configuration/field-type.blade.php',
         ]);
     }
 
@@ -47,11 +52,13 @@ class UspsShippingServiceProvider extends ServiceProvider
     protected function registerConfig()
     {
         $this->mergeConfigFrom(
-            dirname(__DIR__) . '/Config/carriers.php', 'carriers'
+            dirname(__DIR__) . '/Config/carriers.php',
+            'carriers'
         );
 
         $this->mergeConfigFrom(
-            dirname(__DIR__) . '/Config/system.php', 'core'
+            dirname(__DIR__) . '/Config/system.php',
+            'core'
         );
     }
 }
